@@ -1,7 +1,6 @@
 # include <SPI.h>
 
 const int slave_pin = 10;
-const int clock_pin = 13;
 String command = "00";
 bool execute_command = false;
 int eeprom_idx = 0;
