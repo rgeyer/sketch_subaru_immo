@@ -90,7 +90,7 @@ void buffer_print() {
   execute_command = false;
 }
 
-void serialEvent() {
+void interoperableSerialEvent() {
   while (Serial.available()) {
     // get the new byte:
     byte inChar = Serial.read();
@@ -127,6 +127,7 @@ void serialEvent() {
 }
 
 void loop() {
+  interoperableSerialEvent();
   if (execute_command) {
     if (command == "r\n") {
       eeprom_read();
@@ -139,6 +140,11 @@ void loop() {
     }
     if (command == "p\n") {
       buffer_print();
+    }
+    if (command == "0\n") {
+      Serial.write("Reset");
+      command = "00";
+      execute_command = false;
     }
   }
 }
