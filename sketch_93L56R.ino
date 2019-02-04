@@ -142,6 +142,8 @@ void loop() {
       buffer_print();
     }
     if (command == "0\n") {
+      // TODO: More heavy handed reset, like reading everything left in
+      // the serial buffer, and throwing it away, etc.
       Serial.write("Reset");
       command = "00";
       execute_command = false;
