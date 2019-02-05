@@ -1,5 +1,17 @@
 # include <SPI.h>
 
+#if defined(TEENSYDUINO)
+  #if defined(__AVR_ATmega32U4__)
+    int led = 11;
+  #else
+    #error
+  #endif
+#elif defined(ARDUINO_ARCH_AVR)
+  int led = 13;
+#else
+  #error
+#endif
+
 const int slave_pin = 10;
 String command = "00";
 bool execute_command = false;
@@ -8,9 +20,15 @@ byte eeprom_data[256];
 
 SPISettings spiSettings(450000, MSBFIRST, SPI_MODE0);
 
+void reset() {
+  command = "00";
+  execute_command = false;
+  eeprom_idx = 0;
+  memset(eeprom_data, 0, 256);
+}
+
 void setup() {
   Serial.begin(9600);
-  Serial.write("Reset");
   pinMode(slave_pin, OUTPUT);
   SPI.begin();
 }
@@ -44,9 +62,12 @@ void eeprom_write() {
     digitalWrite(slave_pin, LOW);
   }
   SPI.endTransaction();
-  command = "00";
-  execute_command = false;
+  reset();
+  blink_led(1000);
+  blink_led(250);
+  blink_led(250);
   Serial.write("WRIT");
+  Serial.flush();
 }
 
 void eeprom_read() {
@@ -70,8 +91,7 @@ void eeprom_read() {
   digitalWrite(slave_pin, LOW);
   SPI.endTransaction();
   Serial.flush();
-  command = "00";
-  execute_command = false;
+  reset();
 }
 
 void buffer_load() {
@@ -79,15 +99,27 @@ void buffer_load() {
     delay(1);
   } else {
     Serial.write("LOAD");
+    Serial.flush();
     command = "00";
     execute_command = false;
+    eeprom_idx = 0;
   }
 }
 
 void buffer_print() {
   Serial.write(eeprom_data, 256);
+  Serial.flush();
   command = "00";
   execute_command = false;
+  eeprom_idx = 0;
+}
+
+void blink_led(int ms) {
+  int half = ms/2;
+  digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(half);               // wait for a second
+  digitalWrite(led, LOW);    // turn the LED off by making the voltage LOW
+  delay(half);
 }
 
 void interoperableSerialEvent() {
@@ -107,10 +139,6 @@ void interoperableSerialEvent() {
       if (command == "p") {
         Serial.write("PRNT");
         Serial.flush();
-      }
-      if (command == "w") {
-        // Serial.write("WRIT");
-        // Serial.flush();
       }
       command += (char)inChar;
       execute_command = true;
@@ -143,10 +171,11 @@ void loop() {
     }
     if (command == "0\n") {
       // TODO: More heavy handed reset, like reading everything left in
-      // the serial buffer, and throwing it away, etc.
+      // the serial buffer, and throwing it away, etc.      
+      reset();
       Serial.write("Reset");
-      command = "00";
-      execute_command = false;
+      Serial.flush();
+      blink_led(2000);
     }
   }
 }
