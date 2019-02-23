@@ -18,6 +18,8 @@ uint8_t RESET_REQ_PACKET[1] = {0};
 uint8_t RESET_ACK_PACKET[1] = {128};
 uint8_t MW_READ_ACK_PACKET[1] = {129};
 uint8_t MW_WRITE_ACK_PACKET[1] = {130};
+uint8_t I2C_READ_ACK_PACKET[1] = {131};
+uint8_t I2C_WRITE_ACK_PACKET[1] = {132};
 
 const int slave_pin = 10;
 PacketSerial pSer;
@@ -53,6 +55,11 @@ void onSerPacketReceived(const uint8_t* buffer, size_t size) {
       len = (int)(buffer[4] << 8) | (int)(buffer[5]);
       i2c_eeprom_read(devAddr, addr, len);
       break;
+    case 0x04: // I2C_WRITE_PACKET Command ID
+      devAddr = buffer[1];
+      addr = (int)(buffer[2] << 8) | (int)(buffer[3]);
+      len = (int)(buffer[4] << 8) | (int)(buffer[5]);
+      i2c_eeprom_write(devAddr, addr, len, buffer);
   }
 }
 
@@ -165,6 +172,20 @@ void i2c_eeprom_read(int devAddr, int addr, int len) {
     }
   }
   Serial.flush();
+}
+
+void i2c_eeprom_write(int devAddr, int addr, int len, uint8_t* buffer) {
+  // Single byte writes, since we could be dealing with ICs with different page
+  // sizes (8 vs 16), and we may want to write just one or two bytes to specific
+  // addresses.
+  for (int i=0; i < len; i++) {
+    Wire.beginTransmission(devAddr);
+    Wire.write(addr+i);
+    Wire.write(buffer[i+6]);
+    Wire.endTransmission();
+    delay(5);
+  }
+  pSer.send(I2C_WRITE_ACK_PACKET, 1);
 }
 
 void blink_led(int ms) {
