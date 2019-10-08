@@ -2,18 +2,6 @@
 #include <SPI.h>
 #include <Wire.h>
 
-#if defined(TEENSYDUINO)
-  #if defined(__AVR_ATmega32U4__)
-    int led = 11;
-  #else
-    #error
-  #endif
-#elif defined(ARDUINO_ARCH_AVR)
-  int led = 13;
-#else
-  #error
-#endif
-
 uint8_t RESET_REQ_PACKET[1] = {0};
 uint8_t RESET_ACK_PACKET[1] = {128};
 uint8_t MW_READ_ACK_PACKET[1] = {129};
@@ -190,9 +178,9 @@ void i2c_eeprom_write(int devAddr, int addr, int len, uint8_t* buffer) {
 
 void blink_led(int ms) {
   int half = ms/2;
-  digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
+  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
   delay(half);               // wait for a second
-  digitalWrite(led, LOW);    // turn the LED off by making the voltage LOW
+  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
   delay(half);
 }
 
